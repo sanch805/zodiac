@@ -266,6 +266,1095 @@
   Controls
 </button>
 
+<script>
+/* ═══════════════════════════════════════════
+   SPARKLE BACKGROUND
+═══════════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
 
+  const VELOCITY_SCALE = 0.08;
+  const DEFAULTS = {
+    density: 0.5, speed: 0.5, flicker: 0.5,
+    minSize: 0.5, maxSize: 1,
+    particleColor: '#FFFBF0', background: '#3D4FA2'
+  };
+
+  let config = { ...DEFAULTS };
+  let particles = [];
+  let shootingStars = [];
+  let rafId = null;
+  let lastTime = 0;
+  let shootingStarTimer = 0;
+
+  function parseHex(hex) {
+    return {
+      r: parseInt(hex.slice(1,3),16)/255,
+      g: parseInt(hex.slice(3,5),16)/255,
+      b: parseInt(hex.slice(5,7),16)/255
+    };
+  }
+
+  function mapDensity(ui) {
+    const t = (Math.max(0.1, Math.min(1, ui)) - 0.1) / 0.9;
+    return 5 + t * 55;
+  }
+
+  function mapFlicker(ui) {
+    const t = (Math.max(0.1, Math.min(1, ui)) - 0.1) / 0.9;
+    return 0.5 + t * 11.5;
+  }
+
+  function initParticles() {
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const count = Math.floor((w * h) / 10000 * mapDensity(config.density));
+    const vm = config.speed * VELOCITY_SCALE;
+    particles = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * vm,
+      vy: (Math.random() - 0.5) * vm,
+      size: config.minSize + Math.random() * Math.max(0, config.maxSize - config.minSize),
+      opacity: Math.random(),
+      opacityVel: (Math.random() - 0.5) * 0.04
+    }));
+  }
+
+  function spawnShootingStar(w, h) {
+    const angle = (Math.PI / 6) + Math.random() * (Math.PI / 6);
+    const speed = 6 + Math.random() * 6;
+    const length = 80 + Math.random() * 140;
+    let x, y;
+    if (Math.random() < 0.6) { x = Math.random() * w * 0.85; y = -10; }
+    else { x = -10; y = Math.random() * h * 0.45; }
+    shootingStars.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      length, opacity: 0, life: 0, maxLife: 55 + Math.random() * 40, headSize: 1.2 + Math.random() * 1.2 });
+  }
+
+  function drawShootingStar(s, pc) {
+    const angle = Math.atan2(s.vy, s.vx);
+    const tailX = s.x - Math.cos(angle) * s.length * s.opacity;
+    const tailY = s.y - Math.sin(angle) * s.length * s.opacity;
+    const grad = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
+    const c = `${Math.round(pc.r*255)},${Math.round(pc.g*255)},${Math.round(pc.b*255)}`;
+    grad.addColorStop(0, `rgba(${c},0)`);
+    grad.addColorStop(0.6, `rgba(${c},${s.opacity * 0.45})`);
+    grad.addColorStop(1, `rgba(${c},${s.opacity})`);
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY);
+    ctx.lineTo(s.x, s.y);
+    ctx.stroke();
+    const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.headSize * 3);
+    glow.addColorStop(0, `rgba(${c},${s.opacity})`);
+    glow.addColorStop(1, `rgba(${c},0)`);
+    ctx.globalAlpha = s.opacity;
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.headSize * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgb(${c})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.headSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.scale(dpr, dpr);
+    initParticles();
+  }
+
+  function animate(now) {
+    const dt = lastTime === 0 ? 1 : Math.min((now - lastTime) / 16.67, 3);
+    lastTime = now;
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const bg = parseHex(config.background);
+    const pc = parseHex(config.particleColor);
+    const flicker = mapFlicker(config.flicker);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = `rgb(${Math.round(bg.r*255)},${Math.round(bg.g*255)},${Math.round(bg.b*255)})`;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = `rgb(${Math.round(pc.r*255)},${Math.round(pc.g*255)},${Math.round(pc.b*255)})`;
+    for (const p of particles) {
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.x < 0) p.x = w; else if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; else if (p.y > h) p.y = 0;
+      p.opacity += p.opacityVel * flicker * 0.5 * dt;
+      if (p.opacity <= 0.1) { p.opacity = 0.1; p.opacityVel = Math.abs(p.opacityVel); }
+      else if (p.opacity >= 1) { p.opacity = 1; p.opacityVel = -Math.abs(p.opacityVel); }
+      ctx.globalAlpha = p.opacity;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    shootingStarTimer += dt;
+    if (shootingStarTimer > 200 + Math.random() * 260) {
+      shootingStarTimer = 0;
+      spawnShootingStar(w, h);
+      if (Math.random() < 0.3) setTimeout(() => spawnShootingStar(w, h), 350 + Math.random() * 500);
+    }
+    for (let i = shootingStars.length - 1; i >= 0; i--) {
+      const s = shootingStars[i];
+      s.x += s.vx * dt; s.y += s.vy * dt; s.life += dt;
+      const progress = s.life / s.maxLife;
+      if (progress < 0.15) s.opacity = progress / 0.15;
+      else if (progress < 0.72) s.opacity = 1;
+      else s.opacity = 1 - (progress - 0.72) / 0.28;
+      s.opacity = Math.max(0, Math.min(1, s.opacity));
+      if (s.life >= s.maxLife || s.x > w + 150 || s.y > h + 150) { shootingStars.splice(i, 1); continue; }
+      drawShootingStar(s, pc);
+    }
+    rafId = requestAnimationFrame(animate);
+  }
+
+  function start() {
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTime = 0;
+    rafId = requestAnimationFrame(animate);
+  }
+
+  function bindRange(id, key, labelId, suffix = '') {
+    const el = document.getElementById(id);
+    const lbl = document.getElementById(labelId);
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      config[key] = v;
+      lbl.textContent = v + suffix;
+      if (key === 'density') initParticles();
+      else if (key === 'speed') {
+        const vm = v * VELOCITY_SCALE;
+        particles.forEach(p => { p.vx = (Math.random()-0.5)*vm; p.vy = (Math.random()-0.5)*vm; });
+      } else if (key === 'minSize' || key === 'maxSize') {
+        particles.forEach(p => { p.size = config.minSize + Math.random()*Math.max(0, config.maxSize-config.minSize); });
+      }
+    });
+  }
+
+  bindRange('density','density','density-val');
+  bindRange('speed','speed','speed-val');
+  bindRange('flicker','flicker','flicker-val');
+  bindRange('minsize','minSize','minsize-val','px');
+  bindRange('maxsize','maxSize','maxsize-val','px');
+
+  document.getElementById('pcolor').addEventListener('input', e => { config.particleColor = e.target.value; });
+  document.getElementById('bgcolor').addEventListener('input', e => { config.background = e.target.value; });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    config = { ...DEFAULTS };
+    ['density','speed','flicker','minsize','maxsize'].forEach(id => {
+      const keyMap = {density:'density',speed:'speed',flicker:'flicker',minsize:'minSize',maxsize:'maxSize'};
+      document.getElementById(id).value = DEFAULTS[keyMap[id]];
+    });
+    document.getElementById('density-val').textContent = DEFAULTS.density;
+    document.getElementById('speed-val').textContent = DEFAULTS.speed;
+    document.getElementById('flicker-val').textContent = DEFAULTS.flicker;
+    document.getElementById('minsize-val').textContent = DEFAULTS.minSize + 'px';
+    document.getElementById('maxsize-val').textContent = DEFAULTS.maxSize + 'px';
+    document.getElementById('pcolor').value = DEFAULTS.particleColor;
+    document.getElementById('bgcolor').value = DEFAULTS.background;
+    initParticles();
+  });
+
+  const panel = document.getElementById('panel');
+  const toggleBtn = document.getElementById('toggle-btn');
+  let panelOpen = false; // starts closed
+  toggleBtn.addEventListener('click', () => {
+    panelOpen = !panelOpen;
+    panel.classList.toggle('hidden', !panelOpen);
+    toggleBtn.querySelector('.dot').style.animationPlayState = panelOpen ? 'running' : 'paused';
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+  start();
+})();
+
+/* ═══════════════════════════════════════════
+   ZODIAC RINGS + BIRTH DATE LOGIC (unified)
+═══════════════════════════════════════════ */
+(function () {
+
+  /* ── Canvas setup ── */
+  const canvas = document.getElementById('zodiacCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  // On mobile (≤768px) let CSS control the size; on desktop use fixed 580px
+  function getZodiacSize() {
+    return window.innerWidth <= 768
+      ? Math.min(520, window.innerWidth - 40)
+      : 580;
+  }
+
+  function initCanvas() {
+    const SIZE = getZodiacSize();
+    canvas.width  = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    canvas.style.width  = SIZE + 'px';
+    canvas.style.height = SIZE + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return SIZE;
+  }
+
+  let SIZE = initCanvas();
+  let cx = SIZE / 2, cy = SIZE / 2;
+
+  // Scale ring radii proportionally to the 580px baseline
+  function getRings(s) {
+    const scale = s / 580;
+    return { outerR: Math.round(220 * scale), innerR: Math.round(136 * scale) };
+  }
+
+  let { outerR, innerR } = getRings(SIZE);
+  const n = 12;
+  const TOP = -Math.PI / 2;
+
+  /* ── Sign data ── */
+  // Outer ring: Chinese. Index 0 = Rat (base year 2020).
+  const chineseSigns = [
+    { emoji: '🐭', name: 'Rat',     desc: 'Quick-witted, resourceful, versatile',
+      personality: ['Clever & resourceful', 'Charming wit', 'Ambitious drive'],
+      attributes: [['Ingenuity', 88], ['Adaptability', 82], ['Charisma', 80], ['Wisdom', 70], ['Fortune', 78]],
+      colors: ['Blue', 'Gold', 'Green'], numbers: [2, 3, 11],
+      fortune: 'Your cleverness opens doors others cannot even see. Connections you nurture now return as golden opportunities — trust the network you have built.' },
+    { emoji: '🐮', name: 'Ox',      desc: 'Diligent, dependable, strong',
+      personality: ['Steadfast & reliable', 'Quietly determined', 'Deeply honest'],
+      attributes: [['Endurance', 92], ['Dependability', 88], ['Strength', 85], ['Wisdom', 74], ['Fortune', 70]],
+      colors: ['Yellow', 'White', 'Green'], numbers: [1, 4, 10],
+      fortune: 'What you have quietly built is about to bear fruit. Steadiness is your superpower — the harvest season arrives for your long-tended fields.' },
+    { emoji: '🐯', name: 'Tiger',   desc: 'Brave, confident, competitive',
+      personality: ['Fierce & courageous', 'Magnetic presence', 'Competitively bold'],
+      attributes: [['Bravery', 95], ['Power', 90], ['Magnetism', 85], ['Energy', 80], ['Fortune', 76]],
+      colors: ['Orange', 'Blue', 'Grey'], numbers: [1, 3, 7],
+      fortune: 'Fortune favors your fearless spirit right now. A bold move you have been considering is ready to be made — the Tiger leaps where others hesitate.' },
+    { emoji: '🐰', name: 'Rabbit',  desc: 'Quiet, elegant, kind',
+      personality: ['Gentle & artistic', 'Diplomatically kind', 'Quietly lucky'],
+      attributes: [['Grace', 88], ['Luck', 90], ['Refinement', 85], ['Empathy', 82], ['Fortune', 88]],
+      colors: ['Pink', 'Red', 'Purple'], numbers: [3, 4, 11],
+      fortune: 'Love and creativity are entering a golden season. Your gentle instincts are leading you exactly where you need to go — trust the quiet knowing.' },
+    { emoji: '🐲', name: 'Dragon',  desc: 'Confident, intelligent, enthusiastic',
+      personality: ['Magnificent & bold', 'Visionary power', 'Nobly ambitious'],
+      attributes: [['Greatness', 95], ['Vitality', 90], ['Vision', 88], ['Charm', 92], ['Fortune', 90]],
+      colors: ['Gold', 'Silver', 'Imperial Yellow'], numbers: [1, 6, 8],
+      fortune: 'Your ambitions are cosmically aligned right now. What you reach for with conviction, the universe delivers — the Dragon soars and the sky belongs to you.' },
+    { emoji: '🐍', name: 'Snake',   desc: 'Enigmatic, intuitive, introspective',
+      personality: ['Deeply intuitive', 'Wise & enigmatic', 'Patiently strategic'],
+      attributes: [['Wisdom', 95], ['Strategy', 88], ['Depth', 85], ['Intuition', 90], ['Fortune', 75]],
+      colors: ['Black', 'Red', 'Yellow'], numbers: [2, 8, 10],
+      fortune: 'Your patience is finally aligning with perfect timing. Speak less, observe more — your moment approaches and the Snake sees what others are too hasty to notice.' },
+    { emoji: '🐴', name: 'Horse',   desc: 'Animated, active, energetic',
+      personality: ['Free-spirited & wild', 'Energetically joyful', 'Independently brave'],
+      attributes: [['Freedom', 90], ['Energy', 92], ['Spirit', 88], ['Courage', 82], ['Fortune', 78]],
+      colors: ['Brown', 'Yellow', 'Purple'], numbers: [2, 7, 12],
+      fortune: 'Your irresistible energy is drawing extraordinary things closer. The open road leads somewhere remarkable — trust the journey and gallop toward the horizon.' },
+    { emoji: '🐏', name: 'Goat',    desc: 'Calm, gentle, sympathetic',
+      personality: ['Creatively gentle', 'Compassionately dreamy', 'Elegantly peaceful'],
+      attributes: [['Artistry', 92], ['Gentleness', 88], ['Empathy', 85], ['Creativity', 90], ['Fortune', 70]],
+      colors: ['Soft Green', 'Red', 'Lavender'], numbers: [2, 7, 19],
+      fortune: 'A creative endeavor you pour your heart into will flourish. Let your gentleness be your power — it disarms and enchants in equal measure.' },
+    { emoji: '🐵', name: 'Monkey',  desc: 'Sharp, smart, curious',
+      personality: ['Clever & mischievous', 'Inventively quick', 'Magnetically fun'],
+      attributes: [['Ingenuity', 92], ['Playfulness', 88], ['Versatility', 85], ['Wit', 90], ['Fortune', 82]],
+      colors: ['White', 'Blue', 'Gold'], numbers: [1, 7, 18],
+      fortune: 'A playful approach to a serious problem unlocks the way forward. Your wit is your wand — use it with intention and watch obstacles become doorways.' },
+    { emoji: '🐓', name: 'Rooster', desc: 'Observant, hardworking, courageous',
+      personality: ['Confident & punctual', 'Perfectionistically honest', 'Sharply observant'],
+      attributes: [['Precision', 88], ['Integrity', 90], ['Confidence', 85], ['Diligence', 92], ['Fortune', 68]],
+      colors: ['Gold', 'Brown', 'Coral'], numbers: [5, 7, 11],
+      fortune: 'Your meticulous preparation is about to pay off visibly. Recognition arrives for those who never compromise quality — and that is exactly who you are.' },
+    { emoji: '🐶', name: 'Dog',     desc: 'Loyal, honest, prudent',
+      personality: ['Loyal & honest', 'Protectively brave', 'Faithfully just'],
+      attributes: [['Loyalty', 95], ['Justice', 88], ['Courage', 82], ['Honesty', 90], ['Fortune', 72]],
+      colors: ['Green', 'Red', 'Purple'], numbers: [3, 4, 18],
+      fortune: 'Those you have stood by now become towers of support around you. Your integrity attracts allies of the highest caliber — loyalty rewarded tenfold.' },
+    { emoji: '🐷', name: 'Pig',     desc: 'Compassionate, generous, diligent',
+      personality: ['Generously sincere', 'Peacefully trusting', 'Intellectually warm'],
+      attributes: [['Generosity', 90], ['Fortune', 88], ['Warmth', 85], ['Sincerity', 88], ['Wisdom', 72]],
+      colors: ['Yellow', 'Grey', 'Pink'], numbers: [2, 5, 11],
+      fortune: 'Fortune is drawn to your pure heart like moonlight to water. Your generosity circulates and returns multiplied — give freely and watch abundance follow.' },
+  ];
+
+  // Inner ring: Western. Index 0 = Aries (the canonical start).
+  const westernSigns = [
+    { emoji: '♈', name: 'Aries',       desc: 'Bold, ambitious, passionate',              dates: 'Mar 21 – Apr 19', element: 'Fire',  ruling: 'Mars',    month: 4,  day: 19,
+      personality: ['Bold & ambitious', 'Natural leader', 'Passionately driven'],
+      attributes: [['Courage', 90], ['Determination', 85], ['Energy', 88], ['Confidence', 82], ['Fortune', 75]],
+      colors: ['Red', 'Orange', 'Gold'], numbers: [1, 9, 19],
+      fortune: 'Your pioneering spirit ignites new ventures — trust your instincts and charge forward. The universe rewards your courage with breakthroughs this season.' },
+    { emoji: '♉', name: 'Taurus',      desc: 'Reliable, patient, devoted',               dates: 'Apr 20 – May 20', element: 'Earth', ruling: 'Venus',   month: 5,  day: 20,
+      personality: ['Patient & reliable', 'Lover of beauty', 'Quietly strong'],
+      attributes: [['Patience', 88], ['Loyalty', 85], ['Stability', 90], ['Sensibility', 82], ['Fortune', 72]],
+      colors: ['Green', 'Pink', 'White'], numbers: [2, 6, 24],
+      fortune: 'Abundance flows toward those who cultivate steadily. A significant financial opportunity blossoms — tend to it with your characteristic care and watch it grow.' },
+    { emoji: '♊', name: 'Gemini',      desc: 'Curious, adaptable, affectionate',         dates: 'May 21 – Jun 21', element: 'Air',   ruling: 'Mercury', month: 6,  day: 21,
+      personality: ['Witty & versatile', 'Curious explorer', 'Social butterfly'],
+      attributes: [['Adaptability', 92], ['Charm', 90], ['Intellect', 85], ['Wit', 88], ['Fortune', 68]],
+      colors: ['Yellow', 'Silver', 'Sky Blue'], numbers: [3, 7, 21],
+      fortune: 'Conversations open unexpected doors — listen as much as you speak. A silver-tongued opportunity arrives through your network, dressed like an ordinary Tuesday.' },
+    { emoji: '♋', name: 'Cancer',      desc: 'Tenacious, imaginative, loyal',            dates: 'Jun 22 – Jul 22', element: 'Water', ruling: 'Moon',    month: 7,  day: 22,
+      personality: ['Deeply intuitive', 'Fiercely nurturing', 'Emotionally wise'],
+      attributes: [['Empathy', 88], ['Imagination', 82], ['Intuition', 85], ['Loyalty', 80], ['Fortune', 70]],
+      colors: ['White', 'Silver', 'Sea Green'], numbers: [2, 7, 16],
+      fortune: 'Domestic harmony brings unexpected prosperity. Trust the tides of emotion — what you feel now is a prophecy quietly unfolding beneath the surface.' },
+    { emoji: '♌', name: 'Leo',         desc: 'Creative, passionate, generous',           dates: 'Jul 23 – Aug 22', element: 'Fire',  ruling: 'Sun',     month: 8,  day: 22,
+      personality: ['Regal & charismatic', 'Generous warmth', 'Creative performer'],
+      attributes: [['Confidence', 95], ['Creativity', 88], ['Leadership', 90], ['Charm', 92], ['Fortune', 80]],
+      colors: ['Gold', 'Orange', 'Purple'], numbers: [1, 4, 19],
+      fortune: 'The stage is set and the universe is your audience. Creative endeavors shine brilliantly — your generosity returns threefold and the spotlight finds you.' },
+    { emoji: '♍', name: 'Virgo',       desc: 'Loyal, analytical, kind',                 dates: 'Aug 23 – Sep 22', element: 'Earth', ruling: 'Mercury', month: 9,  day: 22,
+      personality: ['Analytical precision', 'Service-minded', 'Deeply observant'],
+      attributes: [['Wisdom', 90], ['Diligence', 88], ['Precision', 92], ['Empathy', 75], ['Fortune', 74]],
+      colors: ['Navy Blue', 'Grey', 'Soft Green'], numbers: [5, 14, 23],
+      fortune: 'Details others overlook become your greatest treasure. Your meticulous nature uncovers a hidden solution — health improvements and recognition arrive hand in hand.' },
+    { emoji: '♎', name: 'Libra',       desc: 'Cooperative, diplomatic, gracious',        dates: 'Sep 23 – Oct 23', element: 'Air',   ruling: 'Venus',   month: 10, day: 23,
+      personality: ['Seeker of balance', 'Diplomatic grace', 'Aesthetic soul'],
+      attributes: [['Harmony', 90], ['Fairness', 88], ['Charm', 85], ['Creativity', 80], ['Fortune', 76]],
+      colors: ['Pink', 'Light Blue', 'Lavender'], numbers: [4, 6, 24],
+      fortune: 'A partnership — romantic or professional — tips the scales in your favor. Beauty and balance magnetize abundance, and harmony is your birthright returning now.' },
+    { emoji: '♏', name: 'Scorpio',     desc: 'Resourceful, brave, passionate',           dates: 'Oct 24 – Nov 21', element: 'Water', ruling: 'Pluto',   month: 11, day: 21,
+      personality: ['Intensely passionate', 'Magnetic mystery', 'Fearless truth-seeker'],
+      attributes: [['Depth', 95], ['Resilience', 90], ['Transformation', 88], ['Intuition', 85], ['Fortune', 78]],
+      colors: ['Deep Red', 'Black', 'Maroon'], numbers: [8, 11, 22],
+      fortune: 'What ends now makes way for something more powerful than you imagined. Secrets revealed bring liberation — the phoenix rises and it wears your face.' },
+    { emoji: '♐', name: 'Sagittarius', desc: 'Generous, idealistic, humorous',           dates: 'Nov 22 – Dec 21', element: 'Fire',  ruling: 'Jupiter', month: 12, day: 21,
+      personality: ['Philosophical wanderer', 'Boundless optimism', 'Generous teacher'],
+      attributes: [['Freedom', 90], ['Wisdom', 85], ['Optimism', 92], ['Adventure', 88], ['Fortune', 84]],
+      colors: ['Purple', 'Cobalt Blue', 'Turquoise'], numbers: [3, 9, 21],
+      fortune: 'A journey — literal or of the mind — expands your universe. Jupiter\'s blessing multiplies whatever you invest with faith, and the horizon holds your fortune.' },
+    { emoji: '♑', name: 'Capricorn',   desc: 'Responsible, disciplined, self-control',   dates: 'Dec 22 – Jan 19', element: 'Earth', ruling: 'Saturn',  month: 1,  day: 19,
+      personality: ['Disciplined ambition', 'Patient climber', 'Quietly powerful'],
+      attributes: [['Discipline', 92], ['Ambition', 88], ['Endurance', 85], ['Wisdom', 82], ['Fortune', 78]],
+      colors: ['Dark Green', 'Brown', 'Charcoal'], numbers: [6, 8, 26],
+      fortune: 'Your steady ascent earns recognition from those who matter most. Legacy-building investments and career milestones align — the mountain peak was always yours.' },
+    { emoji: '♒', name: 'Aquarius',    desc: 'Progressive, original, independent',       dates: 'Jan 20 – Feb 18', element: 'Air',   ruling: 'Uranus',  month: 2,  day: 18,
+      personality: ['Visionary rebel', 'Humanitarian soul', 'Inventive genius'],
+      attributes: [['Innovation', 95], ['Independence', 88], ['Vision', 90], ['Intellect', 85], ['Fortune', 74]],
+      colors: ['Electric Blue', 'Violet', 'Silver'], numbers: [4, 7, 22],
+      fortune: 'Revolutionary ideas find receptive ears and eager collaborators. Your vision of tomorrow becomes today\'s blueprint — the collective benefits from your singular mind.' },
+    { emoji: '♓', name: 'Pisces',      desc: 'Compassionate, artistic, intuitive',       dates: 'Feb 19 – Mar 20', element: 'Water', ruling: 'Neptune', month: 3,  day: 20,
+      personality: ['Mystical dreamer', 'Empathic healer', 'Artistic soul'],
+      attributes: [['Compassion', 90], ['Creativity', 95], ['Intuition', 88], ['Empathy', 85], ['Fortune', 72]],
+      colors: ['Sea Green', 'Lavender', 'Silver'], numbers: [3, 9, 15],
+      fortune: 'Creative and spiritual gifts reach their zenith. What you dream tonight may manifest by the next full moon — the veil between worlds thins for you alone.' },
+  ];
+
+  /* ── Emoji sprites ── */
+  function makeEmojiSprite(emoji, fontSize) {
+    const size = fontSize * 2.5;
+    const oc = document.createElement('canvas');
+    oc.width = size * dpr;
+    oc.height = size * dpr;
+    const octx = oc.getContext('2d');
+    octx.scale(dpr, dpr);
+    octx.font = `${fontSize}px serif`;
+    octx.textAlign = 'center';
+    octx.textBaseline = 'middle';
+    octx.fillText(emoji, size / 2, size / 2);
+    return { canvas: oc, half: size / 2 };
+  }
+
+  let outerSprites, innerSprites;
+  function buildSprites() {
+    const scale = SIZE / 580;
+    outerSprites = chineseSigns.map(s => makeEmojiSprite(s.emoji, Math.round(30 * scale)));
+    innerSprites = westernSigns.map(s => makeEmojiSprite(s.emoji, Math.round(25 * scale)));
+  }
+  buildSprites();
+
+  /* ── Animation state ── */
+  let outerAngle = 0, innerAngle = 0;
+  const idleOuterSpeed = 0.0012, idleInnerSpeed = 0.0018;
+
+  // Spin-to state
+  let spinning = false;
+  let outerTarget = null, innerTarget = null;
+  let outerStart = null, innerStart = null;
+  let spinStart = null;
+  const SPIN_DURATION = 2400; // ms
+
+  // Highlighted sign indices (-1 = none)
+  let highlightOuter = -1, highlightInner = -1;
+  let highlightAlpha = 0; // 0→1 fade in after spin
+
+  /* ── Helpers ── */
+  function normalizeAngle(a) {
+    return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  }
+
+  // Shortest signed delta from current to target, always going in a chosen direction
+  function shortestDelta(from, to) {
+    let d = normalizeAngle(to) - normalizeAngle(from);
+    if (d > Math.PI)  d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+
+  // Easing: ease-in-out cubic
+  function ease(t) {
+    return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+  }
+
+  /* ── Spin-to function ── */
+  // targetAngle = the outerAngle/innerAngle value we want to land at
+  function spinTo(outerTargetAngle, innerTargetAngle) {
+    // Add at least one full extra rotation for dramatic effect
+    const od = shortestDelta(outerAngle, outerTargetAngle);
+    const id = shortestDelta(innerAngle, innerTargetAngle);
+
+    // 1 full rotation, smooth and quick
+    const extraOuter = od >= 0 ? Math.PI * 2 : -Math.PI * 2;
+    const extraInner = id >= 0 ? Math.PI * 2 : -Math.PI * 2;
+
+    outerStart  = outerAngle;
+    innerStart  = innerAngle;
+    outerTarget = outerAngle + extraOuter + od;
+    innerTarget = innerAngle + extraInner + id;
+    spinStart   = null;
+    spinning    = true;
+    highlightAlpha = 0;
+  }
+
+  /* ── Zodiac calculation ── */
+  function getWesternIndex(month, day) {
+    // westernSigns[i].month/day = last day of that sign
+    // Order: Aries(Apr19), Taurus(May20), ..., Capricorn(Jan19), Aquarius(Feb18), Pisces(Mar20)
+    // Then Dec22+ → Capricorn (idx 9)
+    const table = [
+      { m: 1,  d: 19, idx: 9  }, // Capricorn
+      { m: 2,  d: 18, idx: 10 }, // Aquarius
+      { m: 3,  d: 20, idx: 11 }, // Pisces
+      { m: 4,  d: 19, idx: 0  }, // Aries
+      { m: 5,  d: 20, idx: 1  }, // Taurus
+      { m: 6,  d: 21, idx: 2  }, // Gemini
+      { m: 7,  d: 22, idx: 3  }, // Cancer
+      { m: 8,  d: 22, idx: 4  }, // Leo
+      { m: 9,  d: 22, idx: 5  }, // Virgo
+      { m: 10, d: 23, idx: 6  }, // Libra
+      { m: 11, d: 21, idx: 7  }, // Scorpio
+      { m: 12, d: 21, idx: 8  }, // Sagittarius
+      { m: 12, d: 31, idx: 9  }, // Capricorn (Dec22+)
+    ];
+    for (const row of table) {
+      if (month < row.m || (month === row.m && day <= row.d)) return row.idx;
+    }
+    return 9;
+  }
+
+  function getChineseIndex(year, month, day) {
+    let y = year;
+    if (month === 1) y -= 1;
+    if (month === 2 && day < 10) y -= 1;
+    return ((y - 2020) % 12 + 12) % 12;
+  }
+
+  // Given sign index i placed at outerAngle + (i/n)*2π,
+  // compute the outerAngle needed to put sign i at TOP
+  function targetAngleForOuter(signIdx) {
+    // current position of sign i: outerAngle + (signIdx/n)*2π
+    // we want that to equal TOP (−π/2)
+    // so outerAngle_new = TOP - (signIdx/n)*2π
+    return TOP - (signIdx / n) * Math.PI * 2;
+  }
+  function targetAngleForInner(signIdx) {
+    return TOP - (signIdx / n) * Math.PI * 2;
+  }
+
+  /* ── Tooltip ── */
+  const tooltip    = document.getElementById('tooltip');
+  const tooltipSign = document.getElementById('tooltipSign');
+  const tooltipName = document.getElementById('tooltipName');
+  const tooltipDesc = document.getElementById('tooltipDesc');
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = SIZE / rect.width;
+    const scaleY = SIZE / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    const dx = mx - cx, dy = my - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const hitRadius = 22;
+    let found = null;
+
+    if (Math.abs(dist - outerR) < hitRadius) {
+      const angle = Math.atan2(dy, dx);
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < n; i++) {
+        const a = outerAngle + (i / n) * Math.PI * 2;
+        let diff = Math.abs(((angle - a) % (Math.PI*2) + Math.PI*3) % (Math.PI*2) - Math.PI);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      if (bestDiff < 0.3) found = { ...chineseSigns[best], type: 'chinese' };
+    }
+    if (!found && Math.abs(dist - innerR) < hitRadius) {
+      const angle = Math.atan2(dy, dx);
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < n; i++) {
+        const a = innerAngle + (i / n) * Math.PI * 2;
+        let diff = Math.abs(((angle - a) % (Math.PI*2) + Math.PI*3) % (Math.PI*2) - Math.PI);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      if (bestDiff < 0.3) found = { ...westernSigns[best], type: 'western' };
+    }
+
+    if (found) {
+      tooltipSign.textContent = found.emoji;
+      tooltipName.textContent = found.name;
+      tooltipDesc.textContent = found.desc;
+      tooltip.classList.add('visible');
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top  = (e.clientY - 10)  + 'px';
+      canvas.style.cursor = 'pointer';
+    } else {
+      tooltip.classList.remove('visible');
+      canvas.style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('visible');
+    canvas.style.cursor = 'default';
+  });
+
+  /* ── Sign detail panel ── */
+  const signPanel        = document.getElementById('signPanel');
+  const signPanelOverlay = document.getElementById('signPanelOverlay');
+  const signPanelClose   = document.getElementById('signPanelClose');
+
+  function openSignPanel(sign, type) {
+    tooltip.classList.remove('visible');
+
+    document.getElementById('spIcon').textContent = sign.emoji;
+    document.getElementById('spType').textContent = type === 'western' ? 'Western Zodiac' : 'Chinese Zodiac';
+    document.getElementById('spName').textContent = sign.name;
+    document.getElementById('spSub').textContent  = type === 'western'
+      ? `${sign.dates} · ${sign.element} · ${sign.ruling}`
+      : `Year of the ${sign.name} · ${sign.desc}`;
+
+    // Personality tags
+    const pEl = document.getElementById('spPersonality');
+    pEl.innerHTML = '';
+    sign.personality.forEach(t => {
+      const s = document.createElement('span');
+      s.className = 'sign-panel-tag';
+      s.textContent = t;
+      pEl.appendChild(s);
+    });
+
+    // Attribute bars
+    // Lucky colors
+    const cEl = document.getElementById('spColors');
+    cEl.innerHTML = '';
+    sign.colors.forEach(c => {
+      const s = document.createElement('span');
+      s.className = 'sign-panel-tag';
+      s.textContent = c;
+      cEl.appendChild(s);
+    });
+
+    // Lucky numbers
+    const nEl = document.getElementById('spNumbers');
+    nEl.innerHTML = '';
+    sign.numbers.forEach(n => {
+      const s = document.createElement('span');
+      s.className = 'sign-panel-tag';
+      s.textContent = n;
+      nEl.appendChild(s);
+    });
+
+    signPanelOverlay.classList.add('visible');
+    requestAnimationFrame(() => signPanel.classList.add('visible'));
+  }
+
+  function closeSignPanel() {
+    signPanel.classList.remove('visible');
+    signPanelOverlay.classList.remove('visible');
+  }
+
+  signPanelClose.addEventListener('click', closeSignPanel);
+  signPanelOverlay.addEventListener('click', closeSignPanel);
+
+  // Click on canvas to open panel
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = SIZE / rect.width;
+    const scaleY = SIZE / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    const dx = mx - cx, dy = my - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const hitRadius = 28; // slightly larger for touch
+
+    if (Math.abs(dist - outerR) < hitRadius) {
+      const angle = Math.atan2(dy, dx);
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < n; i++) {
+        const a = outerAngle + (i / n) * Math.PI * 2;
+        const diff = Math.abs(((angle - a) % (Math.PI*2) + Math.PI*3) % (Math.PI*2) - Math.PI);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      if (bestDiff < 0.3) openSignPanel(chineseSigns[best], 'chinese');
+      return;
+    }
+    if (Math.abs(dist - innerR) < hitRadius) {
+      const angle = Math.atan2(dy, dx);
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < n; i++) {
+        const a = innerAngle + (i / n) * Math.PI * 2;
+        const diff = Math.abs(((angle - a) % (Math.PI*2) + Math.PI*3) % (Math.PI*2) - Math.PI);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      if (bestDiff < 0.3) openSignPanel(westernSigns[best], 'western');
+    }
+  });
+
+  // Expose closeSignPanel for reset button
+  window.closeSignPanel = closeSignPanel;
+
+  /* ── Draw ── */
+  let lastNow = null;
+  function draw(now) {
+    if (!lastNow) lastNow = now;
+    const dt = Math.min(now - lastNow, 50);
+    lastNow = now;
+
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    if (spinning) {
+      if (!spinStart) spinStart = now;
+      const t = Math.min((now - spinStart) / SPIN_DURATION, 1);
+      const e = ease(t);
+      outerAngle = outerStart + (outerTarget - outerStart) * e;
+      innerAngle = innerStart + (innerTarget - innerStart) * e;
+
+      if (t >= 1) {
+        outerAngle = outerTarget;
+        innerAngle = innerTarget;
+        spinning = false;
+      }
+    } else {
+      if (highlightOuter >= 0) {
+        // Gently hold — no idle drift while locked
+        highlightAlpha = Math.min(highlightAlpha + dt / 400, 1);
+      } else {
+        outerAngle -= idleOuterSpeed * (dt / 16.67);
+        innerAngle += idleInnerSpeed * (dt / 16.67);
+      }
+    }
+
+    // Guide circles
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(232,224,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(232,224,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw outer ring (Chinese)
+    for (let i = 0; i < n; i++) {
+      const angle = outerAngle + (i / n) * Math.PI * 2;
+      const x = cx + outerR * Math.cos(angle);
+      const y = cy + outerR * Math.sin(angle);
+      const sp = outerSprites[i];
+
+      const isHighlighted = i === highlightOuter;
+      if (isHighlighted && highlightAlpha > 0) {
+        // Glow ring behind highlighted emoji
+        ctx.save();
+        ctx.globalAlpha = highlightAlpha * 0.25;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, sp.half * 1.1);
+        grd.addColorStop(0, 'rgba(232,224,255,1)');
+        grd.addColorStop(1, 'rgba(232,224,255,0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, sp.half * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.globalAlpha = (!spinning && highlightOuter >= 0 && !isHighlighted) ? 0.3 + 0.7 * (1 - highlightAlpha) : 1;
+      ctx.drawImage(sp.canvas, 0, 0, sp.canvas.width, sp.canvas.height, x - sp.half, y - sp.half, sp.half * 2, sp.half * 2);
+      ctx.restore();
+    }
+
+    // Draw inner ring (Western)
+    for (let i = 0; i < n; i++) {
+      const angle = innerAngle + (i / n) * Math.PI * 2;
+      const x = cx + innerR * Math.cos(angle);
+      const y = cy + innerR * Math.sin(angle);
+      const sp = innerSprites[i];
+
+      const isHighlighted = i === highlightInner;
+      if (isHighlighted && highlightAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = highlightAlpha * 0.25;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, sp.half * 1.1);
+        grd.addColorStop(0, 'rgba(232,224,255,1)');
+        grd.addColorStop(1, 'rgba(232,224,255,0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, sp.half * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.globalAlpha = (!spinning && highlightInner >= 0 && !isHighlighted) ? 0.3 + 0.7 * (1 - highlightAlpha) : 1;
+      ctx.drawImage(sp.canvas, 0, 0, sp.canvas.width, sp.canvas.height, x - sp.half, y - sp.half, sp.half * 2, sp.half * 2);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+
+  // Re-init canvas size if window crosses the 768px breakpoint
+  window.addEventListener('resize', () => {
+    const newSize = getZodiacSize();
+    if (newSize !== SIZE) {
+      SIZE = newSize;
+      cx = SIZE / 2; cy = SIZE / 2;
+      ({ outerR, innerR } = getRings(SIZE));
+      initCanvas();
+      buildSprites();
+    }
+  });
+  window.zodiacReveal = function(month, day, year) {
+    const wi = getWesternIndex(month, day);
+    const ci = getChineseIndex(year, month, day);
+    highlightOuter = ci;
+    highlightInner = wi;
+    spinTo(targetAngleForOuter(ci), targetAngleForInner(wi));
+  };
+
+  window.zodiacReset = function() {
+    highlightOuter = -1;
+    highlightInner = -1;
+    highlightAlpha = 0;
+    spinning = false;
+    // Resume idle from wherever we are
+  };
+
+  /* ── Birth date inputs ── */
+  const monthSel = document.getElementById('birthMonth');
+  const daySel   = document.getElementById('birthDay');
+  const yearSel  = document.getElementById('birthYear');
+
+  for (let y = 2035; y >= 1920; y--) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+
+  function updateDays() {
+    const m = parseInt(monthSel.value) || 1;
+    const y = parseInt(yearSel.value) || 2000;
+    const maxDay = new Date(y, m, 0).getDate();
+    const current = parseInt(daySel.value);
+    daySel.innerHTML = '<option value="" disabled selected>Day</option>';
+    for (let d = 1; d <= maxDay; d++) {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      if (d === current) opt.selected = true;
+      daySel.appendChild(opt);
+    }
+  }
+
+  monthSel.addEventListener('change', updateDays);
+  yearSel.addEventListener('change', updateDays);
+  updateDays();
+
+  // Western sign display data (keyed by western index)
+  const westernDisplay = [
+    { name: 'Aries',       emoji: '♈', dates: 'Mar 21 – Apr 19',
+      personality: ['Bold & ambitious', 'Natural leader', 'Passionately driven'],
+      attributes:  ['Courage', 'Determination', 'Energy'],
+      colors: ['Red', 'Orange', 'Gold'], numbers: [1, 9, 19] },
+    { name: 'Taurus',      emoji: '♉', dates: 'Apr 20 – May 20',
+      personality: ['Patient & reliable', 'Lover of beauty', 'Quietly strong'],
+      attributes:  ['Patience', 'Loyalty', 'Stability'],
+      colors: ['Green', 'Pink', 'White'], numbers: [2, 6, 24] },
+    { name: 'Gemini',      emoji: '♊', dates: 'May 21 – Jun 21',
+      personality: ['Witty & versatile', 'Curious explorer', 'Social butterfly'],
+      attributes:  ['Adaptability', 'Charm', 'Intellect'],
+      colors: ['Yellow', 'Silver', 'Sky Blue'], numbers: [3, 7, 21] },
+    { name: 'Cancer',      emoji: '♋', dates: 'Jun 22 – Jul 22',
+      personality: ['Deeply intuitive', 'Fiercely nurturing', 'Emotionally wise'],
+      attributes:  ['Empathy', 'Imagination', 'Intuition'],
+      colors: ['White', 'Silver', 'Sea Green'], numbers: [2, 7, 16] },
+    { name: 'Leo',         emoji: '♌', dates: 'Jul 23 – Aug 22',
+      personality: ['Regal & charismatic', 'Generous warmth', 'Creative performer'],
+      attributes:  ['Confidence', 'Creativity', 'Leadership'],
+      colors: ['Gold', 'Orange', 'Purple'], numbers: [1, 4, 19] },
+    { name: 'Virgo',       emoji: '♍', dates: 'Aug 23 – Sep 22',
+      personality: ['Analytical precision', 'Service-minded', 'Deeply observant'],
+      attributes:  ['Wisdom', 'Diligence', 'Precision'],
+      colors: ['Navy Blue', 'Grey', 'Soft Green'], numbers: [5, 14, 23] },
+    { name: 'Libra',       emoji: '♎', dates: 'Sep 23 – Oct 23',
+      personality: ['Seeker of balance', 'Diplomatic grace', 'Aesthetic soul'],
+      attributes:  ['Harmony', 'Fairness', 'Charm'],
+      colors: ['Pink', 'Light Blue', 'Lavender'], numbers: [4, 6, 24] },
+    { name: 'Scorpio',     emoji: '♏', dates: 'Oct 24 – Nov 21',
+      personality: ['Intensely passionate', 'Magnetic mystery', 'Fearless truth-seeker'],
+      attributes:  ['Depth', 'Resilience', 'Transformation'],
+      colors: ['Deep Red', 'Black', 'Maroon'], numbers: [8, 11, 22] },
+    { name: 'Sagittarius', emoji: '♐', dates: 'Nov 22 – Dec 21',
+      personality: ['Philosophical wanderer', 'Boundless optimism', 'Generous teacher'],
+      attributes:  ['Freedom', 'Wisdom', 'Optimism'],
+      colors: ['Purple', 'Cobalt Blue', 'Turquoise'], numbers: [3, 9, 21] },
+    { name: 'Capricorn',   emoji: '♑', dates: 'Dec 22 – Jan 19',
+      personality: ['Disciplined ambition', 'Patient climber', 'Quietly powerful'],
+      attributes:  ['Discipline', 'Ambition', 'Endurance'],
+      colors: ['Dark Green', 'Brown', 'Charcoal'], numbers: [6, 8, 26] },
+    { name: 'Aquarius',    emoji: '♒', dates: 'Jan 20 – Feb 18',
+      personality: ['Visionary rebel', 'Humanitarian soul', 'Inventive genius'],
+      attributes:  ['Innovation', 'Independence', 'Vision'],
+      colors: ['Electric Blue', 'Violet', 'Silver'], numbers: [4, 7, 22] },
+    { name: 'Pisces',      emoji: '♓', dates: 'Feb 19 – Mar 20',
+      personality: ['Mystical dreamer', 'Empathic healer', 'Artistic soul'],
+      attributes:  ['Compassion', 'Creativity', 'Intuition'],
+      colors: ['Sea Green', 'Lavender', 'Silver'], numbers: [3, 9, 15] },
+  ];
+
+  const chineseDisplay = [
+    { name: 'Rat',     emoji: '🐭',
+      personality: ['Clever & resourceful', 'Charming wit', 'Ambitious drive'],
+      attributes:  ['Ingenuity', 'Adaptability', 'Charisma'],
+      colors: ['Blue', 'Gold', 'Green'], numbers: [2, 3, 11],
+      fortune: ['The Rat sharpens every edge with quick thinking.', 'Your resourcefulness turns obstacles into stepping stones.', 'Connections you nurture now return as golden opportunities.'] },
+    { name: 'Ox',      emoji: '🐮',
+      personality: ['Steadfast & reliable', 'Quietly determined', 'Deeply honest'],
+      attributes:  ['Endurance', 'Dependability', 'Strength'],
+      colors: ['Yellow', 'White', 'Green'], numbers: [1, 4, 10],
+      fortune: ['The Ox moves mountains through patient persistence.', 'What you have quietly built is about to bear fruit.', 'Steadiness is your superpower — lean into it.'] },
+    { name: 'Tiger',   emoji: '🐯',
+      personality: ['Fierce & courageous', 'Magnetic presence', 'Competitively bold'],
+      attributes:  ['Bravery', 'Power', 'Magnetism'],
+      colors: ['Orange', 'Blue', 'Grey'], numbers: [1, 3, 7],
+      fortune: ['The Tiger leaps where others hesitate.', 'Fortune favors your fearless spirit right now.', 'A bold move you have been considering is ready to be made.'] },
+    { name: 'Rabbit',  emoji: '🐰',
+      personality: ['Gentle & artistic', 'Diplomatically kind', 'Quietly lucky'],
+      attributes:  ['Grace', 'Luck', 'Refinement'],
+      colors: ['Pink', 'Red', 'Purple'], numbers: [3, 4, 11],
+      fortune: ['The Rabbit carries fortune like a quiet fragrance.', 'Love and creativity are entering a golden season together.', 'Your gentle instincts are leading you exactly where you need to go.'] },
+    { name: 'Dragon',  emoji: '🐲',
+      personality: ['Magnificent & bold', 'Visionary power', 'Nobly ambitious'],
+      attributes:  ['Greatness', 'Vitality', 'Vision'],
+      colors: ['Gold', 'Silver', 'Imperial Yellow'], numbers: [1, 6, 8],
+      fortune: ['The Dragon soars — and the sky belongs to you.', 'Your ambitions are cosmically aligned right now.', 'What you reach for with conviction, the universe delivers.'] },
+    { name: 'Snake',   emoji: '🐍',
+      personality: ['Deeply intuitive', 'Wise & enigmatic', 'Patiently strategic'],
+      attributes:  ['Wisdom', 'Strategy', 'Depth'],
+      colors: ['Black', 'Red', 'Yellow'], numbers: [2, 8, 10],
+      fortune: ['The Snake sees what others are too hasty to notice.', 'Your patience is finally aligning with perfect timing.', 'Speak less, observe more — your moment approaches.'] },
+    { name: 'Horse',   emoji: '🐴',
+      personality: ['Free-spirited & wild', 'Energetically joyful', 'Independently brave'],
+      attributes:  ['Freedom', 'Energy', 'Spirit'],
+      colors: ['Brown', 'Yellow', 'Purple'], numbers: [2, 7, 12],
+      fortune: ['The Horse gallops toward the horizon of possibility.', 'Your irresistible energy is drawing extraordinary things closer.', 'The open road leads somewhere remarkable — trust the journey.'] },
+    { name: 'Goat',    emoji: '🐏',
+      personality: ['Creatively gentle', 'Compassionately dreamy', 'Elegantly peaceful'],
+      attributes:  ['Artistry', 'Gentleness', 'Empathy'],
+      colors: ['Soft Green', 'Red', 'Lavender'], numbers: [2, 7, 19],
+      fortune: ['The Goat creates beauty wherever it wanders.', 'A creative endeavor you pour your heart into will flourish.', 'Let your gentleness be your power — it disarms and enchants.'] },
+    { name: 'Monkey',  emoji: '🐵',
+      personality: ['Clever & mischievous', 'Inventively quick', 'Magnetically fun'],
+      attributes:  ['Ingenuity', 'Playfulness', 'Versatility'],
+      colors: ['White', 'Blue', 'Gold'], numbers: [1, 7, 18],
+      fortune: ['The Monkey solves what everyone else only stares at.', 'A playful approach to a serious problem unlocks the way forward.', 'Your wit is your wand — use it with intention.'] },
+    { name: 'Rooster', emoji: '🐓',
+      personality: ['Confident & punctual', 'Perfectionistically honest', 'Sharply observant'],
+      attributes:  ['Precision', 'Integrity', 'Confidence'],
+      colors: ['Gold', 'Brown', 'Coral'], numbers: [5, 7, 11],
+      fortune: ['The Rooster announces dawn before others even wake.', 'Your meticulous preparation is about to pay off visibly.', 'Recognition arrives for those who never compromise quality — that is you.'] },
+    { name: 'Dog',     emoji: '🐶',
+      personality: ['Loyal & honest', 'Protectively brave', 'Faithfully just'],
+      attributes:  ['Loyalty', 'Justice', 'Courage'],
+      colors: ['Green', 'Red', 'Purple'], numbers: [3, 4, 18],
+      fortune: ['The Dog guards what matters and loses nothing.', 'Those you have stood by now become towers of support around you.', 'Your integrity attracts allies of the highest caliber.'] },
+    { name: 'Pig',     emoji: '🐷',
+      personality: ['Generously sincere', 'Peacefully trusting', 'Intellectually warm'],
+      attributes:  ['Generosity', 'Fortune', 'Warmth'],
+      colors: ['Yellow', 'Grey', 'Pink'], numbers: [2, 5, 11],
+      fortune: ['The Pig finds treasure where others see nothing.', 'Fortune is drawn to your pure heart like moonlight to water.', 'Your generosity circulates and returns multiplied.'] },
+  ];
+
+  // Combined fortune generation
+  function buildCombinedFortune(wName, cName, cFortune) {
+    const line = cFortune[Math.floor(Math.random() * cFortune.length)];
+    return `As ${wName} and ${cName} entwine, the stars whisper a singular truth: ${line.charAt(0).toLowerCase() + line.slice(1)} Your dual nature — shaped by both Western and Eastern skies — opens a path few others can walk.`;
+  }
+
+  // Pick 3 best combined traits (interleave western + chinese, dedupe)
+  function pick3Combined(arrA, arrB) {
+    const merged = [];
+    for (let i = 0; i < 3; i++) { merged.push(arrA[i]); merged.push(arrB[i]); }
+    const seen = new Set();
+    const out = [];
+    for (const t of merged) {
+      const key = t.toLowerCase();
+      if (!seen.has(key)) { seen.add(key); out.push(t); }
+      if (out.length === 3) break;
+    }
+    return out;
+  }
+
+  // Pick 3 lucky colors (prefer shared, else mix)
+  function pick3Colors(cA, cB) {
+    const shared = cA.filter(c => cB.some(b => b.toLowerCase() === c.toLowerCase()));
+    const merged = [...shared, ...cA, ...cB];
+    const seen = new Set(), out = [];
+    for (const c of merged) {
+      const k = c.toLowerCase();
+      if (!seen.has(k)) { seen.add(k); out.push(c); }
+      if (out.length === 3) break;
+    }
+    return out;
+  }
+
+  // Pick 3 lucky numbers (prefer shared, else mix)
+  function pick3Numbers(nA, nB) {
+    const shared = nA.filter(n => nB.includes(n));
+    const merged = [...shared, ...nA, ...nB];
+    const seen = new Set(), out = [];
+    for (const n of merged) {
+      if (!seen.has(n)) { seen.add(n); out.push(n); }
+      if (out.length === 3) break;
+    }
+    return out;
+  }
+
+  document.getElementById('revealBtn').addEventListener('click', () => {
+    const month = parseInt(monthSel.value);
+    const day   = parseInt(daySel.value);
+    const year  = parseInt(yearSel.value);
+
+    if (!month || !day || !year) {
+      alert('Please select your birth month, day, and year.');
+      return;
+    }
+
+    const wi = getWesternIndex(month, day);
+    const ci = getChineseIndex(year, month, day);
+    const western = westernDisplay[wi];
+    const chinese = chineseDisplay[ci];
+
+    document.getElementById('westernEmoji').textContent = western.emoji;
+    document.getElementById('westernName').textContent  = western.name;
+    document.getElementById('westernDates').textContent = western.dates;
+
+    document.getElementById('chineseEmoji').textContent = chinese.emoji;
+    document.getElementById('chineseName').textContent  = chinese.name;
+    document.getElementById('chineseDates').textContent = `Year of the ${chinese.name}`;
+
+    // Mirror to mobile cards
+    document.getElementById('westernEmojiM').textContent = western.emoji;
+    document.getElementById('westernNameM').textContent  = western.name;
+    document.getElementById('westernDatesM').textContent = western.dates;
+    document.getElementById('chineseEmojiM').textContent = chinese.emoji;
+    document.getElementById('chineseNameM').textContent  = chinese.name;
+    document.getElementById('chineseDatesM').textContent = `Year of the ${chinese.name}`;
+
+    // Build combined section
+    const personality = pick3Combined(western.personality, chinese.personality);
+    const attributes  = pick3Combined(western.attributes,  chinese.attributes);
+    const colors      = pick3Colors(western.colors,   chinese.colors);
+    const numbers     = pick3Numbers(western.numbers, chinese.numbers);
+    const fortune     = buildCombinedFortune(western.name, chinese.name, chinese.fortune);
+
+    const pContainer = document.getElementById('combinedPersonality');
+    pContainer.innerHTML = '';
+    const pContainerM = document.getElementById('combinedPersonalityM');
+    pContainerM.innerHTML = '';
+    personality.forEach(t => {
+      ['combinedPersonality', 'combinedPersonalityM'].forEach(id => {
+        const span = document.createElement('span');
+        span.className = 'combined-tag';
+        span.textContent = t;
+        document.getElementById(id).appendChild(span);
+      });
+    });
+
+    const aContainer = document.getElementById('combinedAttributes');
+    aContainer.innerHTML = '';
+    document.getElementById('combinedAttributesM').innerHTML = '';
+    attributes.forEach(t => {
+      ['combinedAttributes', 'combinedAttributesM'].forEach(id => {
+        const span = document.createElement('span');
+        span.className = 'combined-tag';
+        span.textContent = t;
+        document.getElementById(id).appendChild(span);
+      });
+    });
+
+    document.getElementById('combinedColors').innerHTML = '';
+    document.getElementById('combinedColorsM').innerHTML = '';
+    colors.forEach(c => {
+      ['combinedColors', 'combinedColorsM'].forEach(id => {
+        const span = document.createElement('span');
+        span.className = 'combined-tag';
+        span.textContent = c;
+        document.getElementById(id).appendChild(span);
+      });
+    });
+
+    document.getElementById('combinedNumbers').innerHTML = '';
+    document.getElementById('combinedNumbersM').innerHTML = '';
+    numbers.forEach(n => {
+      ['combinedNumbers', 'combinedNumbersM'].forEach(id => {
+        const span = document.createElement('span');
+        span.className = 'combined-tag';
+        span.textContent = n;
+        document.getElementById(id).appendChild(span);
+      });
+    });
+
+    document.getElementById('combinedFortune').textContent  = fortune;
+    document.getElementById('combinedFortuneM').textContent = fortune;
+
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('combinedCard').classList.add('visible');
+    document.getElementById('resultCardMobile').classList.add('visible');
+    document.getElementById('combinedCardMobile').classList.add('visible');
+
+    window.zodiacReveal(month, day, year);
+  });
+
+  document.getElementById('resetSignsBtn').addEventListener('click', () => {
+    monthSel.value = '';
+    daySel.innerHTML = '<option value="" disabled selected>Day</option>';
+    yearSel.value = '';
+    updateDays();
+    document.getElementById('resultCard').classList.remove('visible');
+    document.getElementById('combinedCard').classList.remove('visible');
+    document.getElementById('resultCardMobile').classList.remove('visible');
+    document.getElementById('combinedCardMobile').classList.remove('visible');
+    if (window.closeSignPanel) window.closeSignPanel();
+    window.zodiacReset();
+  });
+
+})();
+</script>
 </body>
 </html>
