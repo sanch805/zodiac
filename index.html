@@ -525,63 +525,91 @@
 
   /* ── Sign data ── */
   // Outer ring: Chinese. Index 0 = Rat (base year 2020).
+  const ZODIAC_IMGS = {
+    'chinese-rat': 'css/media/chinese-zodiac-rat.png',
+    'chinese-rabbit': 'css/media/chinese-zodiac-rabbit.png',
+    'chinese-dragon': 'css/media/chinese-zodiac-dragon.png',
+    'chinese-snake': 'css/media/chinese-zodiac-snake.png',
+    'chinese-horse': 'css/media/chinese-zodiac-horse.png',
+    'chinese-goat': 'css/media/chinese-zodiac-goat.png',
+    'chinese-monkey': 'css/media/chinese-zodiac-monkey.png',
+    'chinese-rooster': 'css/media/chinese-zodiac-rooster.png',
+    'chinese-dog': 'css/media/chinese-zodiac-dog.png',
+    'chinese-pig': 'css/media/chinese-zodiac-pig.png',
+    'chinese-ox': 'css/media/chinese-zodiac-ox.png',
+    'chinese-tiger': 'css/media/chinese-zodiac-tiger.png',
+
+    'western-aries': 'css/media/western-zodiac-aries.png',
+    'western-gemini': 'css/media/western-zodiac-gemini.png',
+    'western-cancer': 'css/media/western-zodiac-cancer.png',
+    'western-libra': 'css/media/western-zodiac-libra.png',
+    'western-scorpio': 'css/media/western-zodiac-scorpio.png',
+    'western-sagittarius': 'css/media/western-zodiac-sagittarius.png',
+    'western-capricorn': 'css/media/western-zodiac-capricorn.png',
+    'western-aquarius': 'css/media/western-zodiac-aquarius.png',
+    'western-pisces': 'css/media/western-zodiac-pisces.png',
+    'western-leo': 'css/media/western-zodiac-leo.png',
+    'western-virgo': 'css/media/western-zodiac-virgo.png',
+    'western-taurus': 'css/media/western-zodiac-taurus.png',
+  };
+
   const chineseSigns = [
-    { emoji: '🐭', name: 'Rat',     desc: 'Quick-witted, resourceful, versatile',
+    { emoji: '🐭', name: 'Rat',     imgKey: 'chinese-rat',     desc: 'Quick-witted, resourceful, versatile',
       personality: ['Clever & resourceful', 'Charming wit', 'Ambitious drive'],
       attributes: [['Ingenuity', 88], ['Adaptability', 82], ['Charisma', 80], ['Wisdom', 70], ['Fortune', 78]],
       colors: ['Blue', 'Gold', 'Green'], numbers: [2, 3, 11],
       fortune: 'Your cleverness opens doors others cannot even see. Connections you nurture now return as golden opportunities — trust the network you have built.' },
-    { emoji: '🐮', name: 'Ox',      desc: 'Diligent, dependable, strong',
+    { emoji: '🐮', name: 'Ox',      imgKey: 'chinese-ox',      desc: 'Diligent, dependable, strong',
       personality: ['Steadfast & reliable', 'Quietly determined', 'Deeply honest'],
       attributes: [['Endurance', 92], ['Dependability', 88], ['Strength', 85], ['Wisdom', 74], ['Fortune', 70]],
       colors: ['Yellow', 'White', 'Green'], numbers: [1, 4, 10],
       fortune: 'What you have quietly built is about to bear fruit. Steadiness is your superpower — the harvest season arrives for your long-tended fields.' },
-    { emoji: '🐯', name: 'Tiger',   desc: 'Brave, confident, competitive',
+    { emoji: '🐯', name: 'Tiger',   imgKey: 'chinese-tiger',   desc: 'Brave, confident, competitive',
       personality: ['Fierce & courageous', 'Magnetic presence', 'Competitively bold'],
       attributes: [['Bravery', 95], ['Power', 90], ['Magnetism', 85], ['Energy', 80], ['Fortune', 76]],
       colors: ['Orange', 'Blue', 'Grey'], numbers: [1, 3, 7],
       fortune: 'Fortune favors your fearless spirit right now. A bold move you have been considering is ready to be made — the Tiger leaps where others hesitate.' },
-    { emoji: '🐰', name: 'Rabbit',  desc: 'Quiet, elegant, kind',
+    { emoji: '🐰', name: 'Rabbit',  imgKey: 'chinese-rabbit',  desc: 'Quiet, elegant, kind',
       personality: ['Gentle & artistic', 'Diplomatically kind', 'Quietly lucky'],
       attributes: [['Grace', 88], ['Luck', 90], ['Refinement', 85], ['Empathy', 82], ['Fortune', 88]],
       colors: ['Pink', 'Red', 'Purple'], numbers: [3, 4, 11],
       fortune: 'Love and creativity are entering a golden season. Your gentle instincts are leading you exactly where you need to go — trust the quiet knowing.' },
-    { emoji: '🐲', name: 'Dragon',  desc: 'Confident, intelligent, enthusiastic',
+    { emoji: '🐲', name: 'Dragon',  imgKey: 'chinese-dragon',  desc: 'Confident, intelligent, enthusiastic',
       personality: ['Magnificent & bold', 'Visionary power', 'Nobly ambitious'],
       attributes: [['Greatness', 95], ['Vitality', 90], ['Vision', 88], ['Charm', 92], ['Fortune', 90]],
       colors: ['Gold', 'Silver', 'Imperial Yellow'], numbers: [1, 6, 8],
       fortune: 'Your ambitions are cosmically aligned right now. What you reach for with conviction, the universe delivers — the Dragon soars and the sky belongs to you.' },
-    { emoji: '🐍', name: 'Snake',   desc: 'Enigmatic, intuitive, introspective',
+    { emoji: '🐍', name: 'Snake',   imgKey: 'chinese-snake',   desc: 'Enigmatic, intuitive, introspective',
       personality: ['Deeply intuitive', 'Wise & enigmatic', 'Patiently strategic'],
       attributes: [['Wisdom', 95], ['Strategy', 88], ['Depth', 85], ['Intuition', 90], ['Fortune', 75]],
       colors: ['Black', 'Red', 'Yellow'], numbers: [2, 8, 10],
       fortune: 'Your patience is finally aligning with perfect timing. Speak less, observe more — your moment approaches and the Snake sees what others are too hasty to notice.' },
-    { emoji: '🐴', name: 'Horse',   desc: 'Animated, active, energetic',
+    { emoji: '🐴', name: 'Horse',   imgKey: 'chinese-horse',   desc: 'Animated, active, energetic',
       personality: ['Free-spirited & wild', 'Energetically joyful', 'Independently brave'],
       attributes: [['Freedom', 90], ['Energy', 92], ['Spirit', 88], ['Courage', 82], ['Fortune', 78]],
       colors: ['Brown', 'Yellow', 'Purple'], numbers: [2, 7, 12],
       fortune: 'Your irresistible energy is drawing extraordinary things closer. The open road leads somewhere remarkable — trust the journey and gallop toward the horizon.' },
-    { emoji: '🐏', name: 'Goat',    desc: 'Calm, gentle, sympathetic',
+    { emoji: '🐏', name: 'Goat',    imgKey: 'chinese-goat',    desc: 'Calm, gentle, sympathetic',
       personality: ['Creatively gentle', 'Compassionately dreamy', 'Elegantly peaceful'],
       attributes: [['Artistry', 92], ['Gentleness', 88], ['Empathy', 85], ['Creativity', 90], ['Fortune', 70]],
       colors: ['Soft Green', 'Red', 'Lavender'], numbers: [2, 7, 19],
       fortune: 'A creative endeavor you pour your heart into will flourish. Let your gentleness be your power — it disarms and enchants in equal measure.' },
-    { emoji: '🐵', name: 'Monkey',  desc: 'Sharp, smart, curious',
+    { emoji: '🐵', name: 'Monkey',  imgKey: 'chinese-monkey',  desc: 'Sharp, smart, curious',
       personality: ['Clever & mischievous', 'Inventively quick', 'Magnetically fun'],
       attributes: [['Ingenuity', 92], ['Playfulness', 88], ['Versatility', 85], ['Wit', 90], ['Fortune', 82]],
       colors: ['White', 'Blue', 'Gold'], numbers: [1, 7, 18],
       fortune: 'A playful approach to a serious problem unlocks the way forward. Your wit is your wand — use it with intention and watch obstacles become doorways.' },
-    { emoji: '🐓', name: 'Rooster', desc: 'Observant, hardworking, courageous',
+    { emoji: '🐓', name: 'Rooster', imgKey: 'chinese-rooster', desc: 'Observant, hardworking, courageous',
       personality: ['Confident & punctual', 'Perfectionistically honest', 'Sharply observant'],
       attributes: [['Precision', 88], ['Integrity', 90], ['Confidence', 85], ['Diligence', 92], ['Fortune', 68]],
       colors: ['Gold', 'Brown', 'Coral'], numbers: [5, 7, 11],
       fortune: 'Your meticulous preparation is about to pay off visibly. Recognition arrives for those who never compromise quality — and that is exactly who you are.' },
-    { emoji: '🐶', name: 'Dog',     desc: 'Loyal, honest, prudent',
+    { emoji: '🐶', name: 'Dog',     imgKey: 'chinese-dog',     desc: 'Loyal, honest, prudent',
       personality: ['Loyal & honest', 'Protectively brave', 'Faithfully just'],
       attributes: [['Loyalty', 95], ['Justice', 88], ['Courage', 82], ['Honesty', 90], ['Fortune', 72]],
       colors: ['Green', 'Red', 'Purple'], numbers: [3, 4, 18],
       fortune: 'Those you have stood by now become towers of support around you. Your integrity attracts allies of the highest caliber — loyalty rewarded tenfold.' },
-    { emoji: '🐷', name: 'Pig',     desc: 'Compassionate, generous, diligent',
+    { emoji: '🐷', name: 'Pig',     imgKey: 'chinese-pig',     desc: 'Compassionate, generous, diligent',
       personality: ['Generously sincere', 'Peacefully trusting', 'Intellectually warm'],
       attributes: [['Generosity', 90], ['Fortune', 88], ['Warmth', 85], ['Sincerity', 88], ['Wisdom', 72]],
       colors: ['Yellow', 'Grey', 'Pink'], numbers: [2, 5, 11],
@@ -590,88 +618,120 @@
 
   // Inner ring: Western. Index 0 = Aries (the canonical start).
   const westernSigns = [
-    { emoji: '♈', name: 'Aries',       desc: 'Bold, ambitious, passionate',              dates: 'Mar 21 – Apr 19', element: 'Fire',  ruling: 'Mars',    month: 4,  day: 19,
+    { emoji: '♈', name: 'Aries',       imgKey: 'western-aries',       desc: 'Bold, ambitious, passionate',              dates: 'Mar 21 – Apr 19', element: 'Fire',  ruling: 'Mars',    month: 4,  day: 19,
       personality: ['Bold & ambitious', 'Natural leader', 'Passionately driven'],
       attributes: [['Courage', 90], ['Determination', 85], ['Energy', 88], ['Confidence', 82], ['Fortune', 75]],
       colors: ['Red', 'Orange', 'Gold'], numbers: [1, 9, 19],
       fortune: 'Your pioneering spirit ignites new ventures — trust your instincts and charge forward. The universe rewards your courage with breakthroughs this season.' },
-    { emoji: '♉', name: 'Taurus',      desc: 'Reliable, patient, devoted',               dates: 'Apr 20 – May 20', element: 'Earth', ruling: 'Venus',   month: 5,  day: 20,
+    { emoji: '♉', name: 'Taurus',      imgKey: 'western-taurus',      desc: 'Reliable, patient, devoted',               dates: 'Apr 20 – May 20', element: 'Earth', ruling: 'Venus',   month: 5,  day: 20,
       personality: ['Patient & reliable', 'Lover of beauty', 'Quietly strong'],
       attributes: [['Patience', 88], ['Loyalty', 85], ['Stability', 90], ['Sensibility', 82], ['Fortune', 72]],
       colors: ['Green', 'Pink', 'White'], numbers: [2, 6, 24],
       fortune: 'Abundance flows toward those who cultivate steadily. A significant financial opportunity blossoms — tend to it with your characteristic care and watch it grow.' },
-    { emoji: '♊', name: 'Gemini',      desc: 'Curious, adaptable, affectionate',         dates: 'May 21 – Jun 21', element: 'Air',   ruling: 'Mercury', month: 6,  day: 21,
+    { emoji: '♊', name: 'Gemini',      imgKey: 'western-gemini',      desc: 'Curious, adaptable, affectionate',         dates: 'May 21 – Jun 21', element: 'Air',   ruling: 'Mercury', month: 6,  day: 21,
       personality: ['Witty & versatile', 'Curious explorer', 'Social butterfly'],
       attributes: [['Adaptability', 92], ['Charm', 90], ['Intellect', 85], ['Wit', 88], ['Fortune', 68]],
       colors: ['Yellow', 'Silver', 'Sky Blue'], numbers: [3, 7, 21],
       fortune: 'Conversations open unexpected doors — listen as much as you speak. A silver-tongued opportunity arrives through your network, dressed like an ordinary Tuesday.' },
-    { emoji: '♋', name: 'Cancer',      desc: 'Tenacious, imaginative, loyal',            dates: 'Jun 22 – Jul 22', element: 'Water', ruling: 'Moon',    month: 7,  day: 22,
+    { emoji: '♋', name: 'Cancer',      imgKey: 'western-cancer',      desc: 'Tenacious, imaginative, loyal',            dates: 'Jun 22 – Jul 22', element: 'Water', ruling: 'Moon',    month: 7,  day: 22,
       personality: ['Deeply intuitive', 'Fiercely nurturing', 'Emotionally wise'],
       attributes: [['Empathy', 88], ['Imagination', 82], ['Intuition', 85], ['Loyalty', 80], ['Fortune', 70]],
       colors: ['White', 'Silver', 'Sea Green'], numbers: [2, 7, 16],
       fortune: 'Domestic harmony brings unexpected prosperity. Trust the tides of emotion — what you feel now is a prophecy quietly unfolding beneath the surface.' },
-    { emoji: '♌', name: 'Leo',         desc: 'Creative, passionate, generous',           dates: 'Jul 23 – Aug 22', element: 'Fire',  ruling: 'Sun',     month: 8,  day: 22,
+    { emoji: '♌', name: 'Leo',         imgKey: 'western-leo',         desc: 'Creative, passionate, generous',           dates: 'Jul 23 – Aug 22', element: 'Fire',  ruling: 'Sun',     month: 8,  day: 22,
       personality: ['Regal & charismatic', 'Generous warmth', 'Creative performer'],
       attributes: [['Confidence', 95], ['Creativity', 88], ['Leadership', 90], ['Charm', 92], ['Fortune', 80]],
       colors: ['Gold', 'Orange', 'Purple'], numbers: [1, 4, 19],
       fortune: 'The stage is set and the universe is your audience. Creative endeavors shine brilliantly — your generosity returns threefold and the spotlight finds you.' },
-    { emoji: '♍', name: 'Virgo',       desc: 'Loyal, analytical, kind',                 dates: 'Aug 23 – Sep 22', element: 'Earth', ruling: 'Mercury', month: 9,  day: 22,
+    { emoji: '♍', name: 'Virgo',       imgKey: 'western-virgo',       desc: 'Loyal, analytical, kind',                 dates: 'Aug 23 – Sep 22', element: 'Earth', ruling: 'Mercury', month: 9,  day: 22,
       personality: ['Analytical precision', 'Service-minded', 'Deeply observant'],
       attributes: [['Wisdom', 90], ['Diligence', 88], ['Precision', 92], ['Empathy', 75], ['Fortune', 74]],
       colors: ['Navy Blue', 'Grey', 'Soft Green'], numbers: [5, 14, 23],
       fortune: 'Details others overlook become your greatest treasure. Your meticulous nature uncovers a hidden solution — health improvements and recognition arrive hand in hand.' },
-    { emoji: '♎', name: 'Libra',       desc: 'Cooperative, diplomatic, gracious',        dates: 'Sep 23 – Oct 23', element: 'Air',   ruling: 'Venus',   month: 10, day: 23,
+    { emoji: '♎', name: 'Libra',       imgKey: 'western-libra',       desc: 'Cooperative, diplomatic, gracious',        dates: 'Sep 23 – Oct 23', element: 'Air',   ruling: 'Venus',   month: 10, day: 23,
       personality: ['Seeker of balance', 'Diplomatic grace', 'Aesthetic soul'],
       attributes: [['Harmony', 90], ['Fairness', 88], ['Charm', 85], ['Creativity', 80], ['Fortune', 76]],
       colors: ['Pink', 'Light Blue', 'Lavender'], numbers: [4, 6, 24],
       fortune: 'A partnership — romantic or professional — tips the scales in your favor. Beauty and balance magnetize abundance, and harmony is your birthright returning now.' },
-    { emoji: '♏', name: 'Scorpio',     desc: 'Resourceful, brave, passionate',           dates: 'Oct 24 – Nov 21', element: 'Water', ruling: 'Pluto',   month: 11, day: 21,
+    { emoji: '♏', name: 'Scorpio',     imgKey: 'western-scorpio',     desc: 'Resourceful, brave, passionate',           dates: 'Oct 24 – Nov 21', element: 'Water', ruling: 'Pluto',   month: 11, day: 21,
       personality: ['Intensely passionate', 'Magnetic mystery', 'Fearless truth-seeker'],
       attributes: [['Depth', 95], ['Resilience', 90], ['Transformation', 88], ['Intuition', 85], ['Fortune', 78]],
       colors: ['Deep Red', 'Black', 'Maroon'], numbers: [8, 11, 22],
       fortune: 'What ends now makes way for something more powerful than you imagined. Secrets revealed bring liberation — the phoenix rises and it wears your face.' },
-    { emoji: '♐', name: 'Sagittarius', desc: 'Generous, idealistic, humorous',           dates: 'Nov 22 – Dec 21', element: 'Fire',  ruling: 'Jupiter', month: 12, day: 21,
+    { emoji: '♐', name: 'Sagittarius', imgKey: 'western-sagittarius', desc: 'Generous, idealistic, humorous',           dates: 'Nov 22 – Dec 21', element: 'Fire',  ruling: 'Jupiter', month: 12, day: 21,
       personality: ['Philosophical wanderer', 'Boundless optimism', 'Generous teacher'],
       attributes: [['Freedom', 90], ['Wisdom', 85], ['Optimism', 92], ['Adventure', 88], ['Fortune', 84]],
       colors: ['Purple', 'Cobalt Blue', 'Turquoise'], numbers: [3, 9, 21],
       fortune: 'A journey — literal or of the mind — expands your universe. Jupiter\'s blessing multiplies whatever you invest with faith, and the horizon holds your fortune.' },
-    { emoji: '♑', name: 'Capricorn',   desc: 'Responsible, disciplined, self-control',   dates: 'Dec 22 – Jan 19', element: 'Earth', ruling: 'Saturn',  month: 1,  day: 19,
+    { emoji: '♑', name: 'Capricorn',   imgKey: 'western-capricorn',   desc: 'Responsible, disciplined, self-control',   dates: 'Dec 22 – Jan 19', element: 'Earth', ruling: 'Saturn',  month: 1,  day: 19,
       personality: ['Disciplined ambition', 'Patient climber', 'Quietly powerful'],
       attributes: [['Discipline', 92], ['Ambition', 88], ['Endurance', 85], ['Wisdom', 82], ['Fortune', 78]],
       colors: ['Dark Green', 'Brown', 'Charcoal'], numbers: [6, 8, 26],
       fortune: 'Your steady ascent earns recognition from those who matter most. Legacy-building investments and career milestones align — the mountain peak was always yours.' },
-    { emoji: '♒', name: 'Aquarius',    desc: 'Progressive, original, independent',       dates: 'Jan 20 – Feb 18', element: 'Air',   ruling: 'Uranus',  month: 2,  day: 18,
+    { emoji: '♒', name: 'Aquarius',    imgKey: 'western-aquarius',    desc: 'Progressive, original, independent',       dates: 'Jan 20 – Feb 18', element: 'Air',   ruling: 'Uranus',  month: 2,  day: 18,
       personality: ['Visionary rebel', 'Humanitarian soul', 'Inventive genius'],
       attributes: [['Innovation', 95], ['Independence', 88], ['Vision', 90], ['Intellect', 85], ['Fortune', 74]],
       colors: ['Electric Blue', 'Violet', 'Silver'], numbers: [4, 7, 22],
       fortune: 'Revolutionary ideas find receptive ears and eager collaborators. Your vision of tomorrow becomes today\'s blueprint — the collective benefits from your singular mind.' },
-    { emoji: '♓', name: 'Pisces',      desc: 'Compassionate, artistic, intuitive',       dates: 'Feb 19 – Mar 20', element: 'Water', ruling: 'Neptune', month: 3,  day: 20,
+    { emoji: '♓', name: 'Pisces',      imgKey: 'western-pisces',      desc: 'Compassionate, artistic, intuitive',       dates: 'Feb 19 – Mar 20', element: 'Water', ruling: 'Neptune', month: 3,  day: 20,
       personality: ['Mystical dreamer', 'Empathic healer', 'Artistic soul'],
       attributes: [['Compassion', 90], ['Creativity', 95], ['Intuition', 88], ['Empathy', 85], ['Fortune', 72]],
       colors: ['Sea Green', 'Lavender', 'Silver'], numbers: [3, 9, 15],
       fortune: 'Creative and spiritual gifts reach their zenith. What you dream tonight may manifest by the next full moon — the veil between worlds thins for you alone.' },
   ];
 
-  /* ── Emoji sprites ── */
-  function makeEmojiSprite(emoji, fontSize) {
-    const size = fontSize * 2.5;
+  /* ── Image/Emoji sprites ── */
+  function makeImageSprite(imgKey, emoji, slotSize) {
     const oc = document.createElement('canvas');
-    oc.width = size * dpr;
-    oc.height = size * dpr;
+    oc.width = slotSize * dpr;
+    oc.height = slotSize * dpr;
     const octx = oc.getContext('2d');
     octx.scale(dpr, dpr);
-    octx.font = `${fontSize}px serif`;
-    octx.textAlign = 'center';
-    octx.textBaseline = 'middle';
-    octx.fillText(emoji, size / 2, size / 2);
-    return { canvas: oc, half: size / 2 };
+    const sp = { canvas: oc, half: slotSize / 2, ready: false };
+    if (imgKey && ZODIAC_IMGS[imgKey]) {
+      const img = new Image();
+      img.onload = () => {
+        octx.clearRect(0, 0, slotSize, slotSize);
+        // Fit image preserving aspect ratio, with small padding
+        const pad = slotSize * 0.06;
+        const maxD = slotSize - pad * 2;
+        const ratio = img.naturalWidth / img.naturalHeight;
+        let dw, dh;
+        if (ratio >= 1) { dw = maxD; dh = maxD / ratio; }
+        else            { dh = maxD; dw = maxD * ratio; }
+        const dx = (slotSize - dw) / 2;
+        const dy = (slotSize - dh) / 2;
+        octx.drawImage(img, dx, dy, dw, dh);
+        sp.ready = true;
+      };
+      img.src = ZODIAC_IMGS[imgKey];
+    } else {
+      // Fallback: draw emoji text
+      const fontSize = Math.round(slotSize * 0.55);
+      octx.font = `${fontSize}px serif`;
+      octx.textAlign = 'center';
+      octx.textBaseline = 'middle';
+      octx.fillStyle = 'rgba(232,224,255,0.9)';
+      octx.fillText(emoji, slotSize / 2, slotSize / 2);
+      sp.ready = true;
+    }
+    return sp;
   }
+
+  const CHINESE_IMG_KEYS = ['chinese-rat', 'chinese-ox', 'chinese-tiger', 'chinese-rabbit', 'chinese-dragon',
+    'chinese-snake', 'chinese-horse', 'chinese-goat', 'chinese-monkey',
+    'chinese-rooster', 'chinese-dog', 'chinese-pig'];
+  const WESTERN_IMG_KEYS = ['western-aries', 'western-taurus', 'western-gemini', 'western-cancer',
+    'western-leo', 'western-virgo', 'western-libra', 'western-scorpio', 'western-sagittarius',
+    'western-capricorn', 'western-aquarius', 'western-pisces'];
 
   let outerSprites, innerSprites;
   function buildSprites() {
     const scale = SIZE / 580;
-    outerSprites = chineseSigns.map(s => makeEmojiSprite(s.emoji, Math.round(30 * scale)));
-    innerSprites = westernSigns.map(s => makeEmojiSprite(s.emoji, Math.round(25 * scale)));
+    const outerSlot = Math.round(44 * scale);
+    const innerSlot = Math.round(34 * scale);
+    outerSprites = chineseSigns.map((s, i) => makeImageSprite(CHINESE_IMG_KEYS[i], s.emoji, outerSlot));
+    innerSprites = westernSigns.map((s, i) => makeImageSprite(WESTERN_IMG_KEYS[i], s.emoji, innerSlot));
   }
   buildSprites();
 
@@ -838,7 +898,13 @@
   function openSignPanel(sign, type) {
     tooltip.classList.remove('visible');
 
-    document.getElementById('spIcon').textContent = sign.emoji;
+    const spImgKey = sign.imgKey || null;
+    const spIconEl = document.getElementById('spIcon');
+    if (spImgKey && ZODIAC_IMGS[spImgKey]) {
+      spIconEl.innerHTML = `<img src="${ZODIAC_IMGS[spImgKey]}" style="width:48px;height:48px;object-fit:contain;filter:invert(1) brightness(0.85)" alt="">`;
+    } else {
+      spIconEl.textContent = sign.emoji;
+    }
     document.getElementById('spType').textContent = type === 'western' ? 'Western Zodiac' : 'Chinese Zodiac';
     document.getElementById('spName').textContent = sign.name;
     document.getElementById('spSub').textContent  = type === 'western'
@@ -993,6 +1059,7 @@
 
       ctx.save();
       ctx.globalAlpha = (!spinning && highlightOuter >= 0 && !isHighlighted) ? 0.3 + 0.7 * (1 - highlightAlpha) : 1;
+      ctx.globalCompositeOperation = 'screen';
       ctx.drawImage(sp.canvas, 0, 0, sp.canvas.width, sp.canvas.height, x - sp.half, y - sp.half, sp.half * 2, sp.half * 2);
       ctx.restore();
     }
@@ -1020,6 +1087,7 @@
 
       ctx.save();
       ctx.globalAlpha = (!spinning && highlightInner >= 0 && !isHighlighted) ? 0.3 + 0.7 * (1 - highlightAlpha) : 1;
+      ctx.globalCompositeOperation = 'screen';
       ctx.drawImage(sp.canvas, 0, 0, sp.canvas.width, sp.canvas.height, x - sp.half, y - sp.half, sp.half * 2, sp.half * 2);
       ctx.restore();
     }
@@ -1260,19 +1328,29 @@
     const western = westernDisplay[wi];
     const chinese = chineseDisplay[ci];
 
-    document.getElementById('westernEmoji').textContent = western.emoji;
+    function emojiOrImg(key, fallbackEmoji) {
+      if (key && ZODIAC_IMGS[key]) {
+        return `<img src="${ZODIAC_IMGS[key]}" style="width:44px;height:44px;object-fit:contain;filter:invert(1) brightness(0.85)" alt="">`;
+      }
+      return `<span style="font-size:28px">${fallbackEmoji}</span>`;
+    }
+
+    const wKey = WESTERN_IMG_KEYS[wi];
+    const cKey = CHINESE_IMG_KEYS[ci];
+
+    document.getElementById('westernEmoji').innerHTML  = emojiOrImg(wKey, western.emoji);
     document.getElementById('westernName').textContent  = western.name;
     document.getElementById('westernDates').textContent = western.dates;
 
-    document.getElementById('chineseEmoji').textContent = chinese.emoji;
+    document.getElementById('chineseEmoji').innerHTML  = emojiOrImg(cKey, chinese.emoji);
     document.getElementById('chineseName').textContent  = chinese.name;
     document.getElementById('chineseDates').textContent = `Year of the ${chinese.name}`;
 
     // Mirror to mobile cards
-    document.getElementById('westernEmojiM').textContent = western.emoji;
+    document.getElementById('westernEmojiM').innerHTML  = emojiOrImg(wKey, western.emoji);
     document.getElementById('westernNameM').textContent  = western.name;
     document.getElementById('westernDatesM').textContent = western.dates;
-    document.getElementById('chineseEmojiM').textContent = chinese.emoji;
+    document.getElementById('chineseEmojiM').innerHTML  = emojiOrImg(cKey, chinese.emoji);
     document.getElementById('chineseNameM').textContent  = chinese.name;
     document.getElementById('chineseDatesM').textContent = `Year of the ${chinese.name}`;
 
