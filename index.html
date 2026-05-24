@@ -937,7 +937,7 @@
     const spImgKey = sign.imgKey || null;
     const spIconEl = document.getElementById('spIcon');
     if (spImgKey && ZODIAC_IMGS[spImgKey]) {
-      spIconEl.innerHTML = `<img src="${ZODIAC_IMGS[spImgKey]}" style="width:48px;height:48px;object-fit:contain;filter:invert(1) brightness(0.85)" alt="">`;
+      spIconEl.innerHTML = `<img src="${ZODIAC_IMGS[spImgKey]}" style="width:48px;height:48px;object-fit:contain;brightness(0.85)" alt="">`;
     } else {
       spIconEl.textContent = sign.emoji;
     }
@@ -1366,7 +1366,7 @@
 
     function emojiOrImg(key, fallbackEmoji) {
       if (key && ZODIAC_IMGS[key]) {
-        return `<img src="${ZODIAC_IMGS[key]}" style="width:44px;height:44px;object-fit:contain;filter:invert(1) brightness(0.85)" alt="">`;
+        return `<img src="${ZODIAC_IMGS[key]}" style="width:44px;height:44px;object-fit:contain;brightness(0.85)" alt="">`;
       }
       return `<span style="font-size:28px">${fallbackEmoji}</span>`;
     }
