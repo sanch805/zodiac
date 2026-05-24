@@ -544,7 +544,7 @@ canvas#bgCanvas {
   height: 68px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0 56px;
   z-index: 15;
   pointer-events: none;
