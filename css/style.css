@@ -183,7 +183,8 @@ canvas#bgCanvas {
 
 /* ── Result card ── */
 .result-card {
-  background: var(--panel-bg);
+  background: rgba(255,255,255,0.55);
+  opacity: 85%;
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
   backdrop-filter: blur(24px);
@@ -203,7 +204,7 @@ canvas#bgCanvas {
   padding: 10px 0;
 }
 .result-row + .result-row {
-  border-top: 1px solid var(--panel-border);
+  border-top: 1px solid rgba(10,10,20,0.55);
 }
 .result-emoji {
   font-size: 28px;
@@ -216,18 +217,18 @@ canvas#bgCanvas {
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: rgba(10,10,20,0.55);
   margin-bottom: 3px;
 }
 .result-name {
   font-size: 18px;
   font-weight: 400;
-  color: var(--text-primary);
+  color: rgba(0, 0, 0, 0.55);
   letter-spacing: 0.01em;
 }
 .result-dates {
   font-size: 11px;
-  color: var(--text-muted);
+  color: rgba(10,10,20,0.55);
   margin-top: 2px;
 }
 
@@ -310,7 +311,8 @@ canvas#bgCanvas {
 
 /* ── Combined reading card ── */
 .combined-card {
-  background: var(--panel-bg);
+  background: rgba(255,255,255,0.55);
+  opacity: 85%;
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
   backdrop-filter: blur(24px);
@@ -327,7 +329,7 @@ canvas#bgCanvas {
   font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: rgba(10,10,20,0.55);
   margin-bottom: 9px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -340,15 +342,15 @@ canvas#bgCanvas {
 .combined-tag {
   font-size: 11px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  color: var(--text-dim);
+  color: rgba(10,10,20,0.55);
   background: rgba(255,255,255,0.06);
-  border: 1px solid var(--panel-border);
+  border: 1px solid rgba(10,10,20,0.55);
   border-radius: 100px;
   padding: 4px 12px;
 }
 .combined-divider {
   height: 1px;
-  background: var(--panel-border);
+  background: rgba(10,10,20,0.55);
   margin: 0 0 14px;
 }
 .combined-lucky {
@@ -366,7 +368,7 @@ canvas#bgCanvas {
 .combined-fortune {
   font-size: 12px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  color: var(--text-dim);
+  color: rgba(10,10,20,0.55);
   line-height: 1.75;
   font-style: italic;
 }
